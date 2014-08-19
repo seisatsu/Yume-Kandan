@@ -1,7 +1,7 @@
 Yume Kandan
 ===========
 
-Yume Kandan (Dream Chat) is a social chat application developed for Uboachan.net, which offers a Yume Nikki-like exploration game with chat features.
+Yume Kandan (Dream Chat) is a social chat application developed for Uboachan.net, which will offer a multiplayer Yume Nikki inspired exploration experience with chat features.
 
 Requirements
 ------------
