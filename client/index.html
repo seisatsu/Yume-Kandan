@@ -1,0 +1,144 @@
+<!DOCTYPE html> 
+
+<!--
+Yume Kandan (Dream Chat)
+Produced for Uboachan.net
+Copyright (c) 2014 Michael D. Reiley (Seisatsu)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy 
+of this software and associated documentation files (the "Software"), to 
+deal in the Software without restriction, including without limitation the 
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or 
+sell copies of the Software, and to permit persons to whom the Software is 
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in 
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
+IN THE SOFTWARE.
+
+====
+TODO
+====
+
+* Make players aware of each other!
+* Add support for Tiled maps.
+* Add support for multiple areas and movement between areas.
+* Add support for multiple graphical and walkable layers.
+* Add animated movement.
+* Add music and sound effects.
+* Stylesheets. This interface is ugly as hell.
+* Widgets and chat box inside the game window.
+* Custom or at least multiple player sprites, with animations.
+* Interactive objects in the world.
+* Stack-based properly timed input handling.
+//-->
+
+<html>
+<head>
+    <script src="http://pariahsoft.com:1223/socket.io/socket.io.js"></script>
+    <script src="jaws.js"></script>
+    <script src="config.js"></script>
+    <meta charset="UTF-8">
+    <title>Yume Kandan</title>
+</head>
+<body>
+    <canvas width=500 height=500 id="canvas"></canvas><br />
+    FPS: <span id="fps"></span>. Move with arrows. Use textbox to speak.
+
+    <script>
+    /*** Initial Setup ***/
+
+    // Declare global variables.
+    var playersprite;
+    var playerlist;
+    var selfcid;
+    var socket;
+    var fps = document.getElementById("fps");
+
+
+    /*** Game Logic ***/
+
+    function PlayState() {
+        // *** Setup function.
+        this.setup = function() {
+            // Connect and join the server.
+            socket = io.connect(config["network"]["host"] + ":" + config["network"]["port"]);
+            socket.emit("join", "seisatsu");
+
+            // Create player sprite. Only one available now.
+            playersprite = new jaws.Sprite({image: "smiley.png", x: 32, y:32, scale: 1});
+
+            // Prevent default keys.
+            jaws.preventDefaultKeys(["up", "down", "left", "right", "space"]);
+        }
+
+        // *** Mainloop first function.
+        this.update = function() {
+            // Listen for server-message event.
+            socket.on("server-message", function(msg) {
+            });
+
+            // Listen for update-players event.
+            socket.on("update-players", function(scid, pl) {
+                selfcid = scid;
+                playerslist = pl;
+            });
+
+            // Listen for say event.
+            socket.on("say", function(cid, msg) {
+            });
+
+            // Listen for move event.
+            socket.on("move", function(cid, x, y) {
+            });
+
+            // Listen for keypresses.
+            if(jaws.pressed("left a")) {
+                playersprite.x -= 16;
+                socket.emit("move", -1, 0);
+            }
+            if(jaws.pressed("right d")) {
+                playersprite.x += 16;
+                socket.emit("move", 1, 0);
+            }
+            if(jaws.pressed("up w")) {
+                playersprite.y -= 16;
+                socket.emit("move", 0, -1);
+            }
+            if(jaws.pressed("down s")) {
+                playersprite.y += 16;
+                socket.emit("move", 0, +1);
+            }
+
+            // Update FPS.
+            fps.innerHTML = jaws.game_loop.fps;
+        }
+
+        // *** Mainloop second function.
+        this.draw = function() {
+            jaws.clear();
+            playersprite.draw();
+        }
+    }
+
+
+    /*** Initialize ***/
+
+    // Load the app on window load.
+    window.onload = function() {
+        // Load resources.
+        jaws.assets.add("smiley.png")
+
+        // Start.
+        jaws.start(PlayState);
+    }
+    </script>
+</body>
+</html>
