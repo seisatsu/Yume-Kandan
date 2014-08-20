@@ -1,5 +1,5 @@
 {
-	"network": {
-    	"port": 1223
-	}
+    "network": {
+        "port": 1223
+    }
 }

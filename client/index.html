@@ -1,5 +1,16 @@
 <!DOCTYPE html> 
 
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link type="text/css" rel="stylesheet" href="style.css" />
+    <script src="http://uboachan.net:1223/socket.io/socket.io.js"></script>
+    <script src="jaws.js"></script>
+    <script src="config.js"></script>
+    <script src="tiled-map.js"></script>
+    <title>Yume Kandan</title>
+</head>
+
 <!--
 Yume Kandan (Dream Chat)
 Produced for Uboachan.net
@@ -42,16 +53,6 @@ TODO
 * prevent default (jquery)
 //-->
 
-<html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link type="text/css" rel="stylesheet" href="style.css" />
-    <script src="http://uboachan.net:1223/socket.io/socket.io.js"></script>
-    <script src="jaws.js"></script>
-    <script src="jquery.js"></script>
-    <script src="config.js"></script>
-    <title>Yume Kandan</title>
-</head>
 <body>
     <div id="page">
         <canvas width=384 height=384 id="canvas"></canvas><br />
@@ -80,6 +81,7 @@ TODO
     // Declare global variables.
     var playersprite;
     var playerlist;
+    var input_locked = false;
     var selfcid;
     var socket;
     var fps = document.getElementById('fps');
@@ -106,6 +108,10 @@ TODO
     }
 
 
+    /*** Input Handler ***/
+    
+
+
     /*** Game Logic ***/
 
     function PlayState() {
@@ -113,7 +119,7 @@ TODO
         this.setup = function() {
             // Attempt connection.
             socket = io.connect(config['network']['host'] + ':' + config['network']['port']);
-            socket.emit('join', 'seisatsu');
+            socket.emit('join', config['chat']['unnamed'] + Math.floor(Math.random() * 999));
 
             // Create player sprite. Only one available now.
             playersprite = new jaws.Sprite({

@@ -41,7 +41,7 @@ input, textarea {
 	background: #603030;
 	border: 1px solid #a9a9a9;
 	text-align: left;
-	margin: 5px;
+	margin: 2px -2px;
 }
 
 input {

@@ -1,14 +1,19 @@
 // *** Client Configuration File *** //
 
 config = {
-	"network": {
-		"host": "uboachan.net",
-		"port": 1223,
-		"timeout": 5000
+	"chat": {
+		"unnamed": "guest"
 	},
 
 	"graphics": {
-		"tilewidth": 32,
-		"tileheight": 32
-	}
+        "tilewidth": 32,
+        "tileheight": 32,
+        "layers_below": 3,
+        "layers_above": 3
+    },
+
+    "network": {
+        "host": "uboachan.net",
+        "port": 1223
+    }
 }
