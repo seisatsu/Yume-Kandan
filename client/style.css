@@ -1,0 +1,54 @@
+body {
+	background: #303030;
+	color: gray;
+	font-family: arial;
+}
+
+canvas {
+	background: #000000;
+}
+
+h1 {
+	font-size: 1.2em;
+}
+
+div#page {
+	text-align: center;
+	width: 100%;
+}
+
+div#jaws-log {
+	background: #000000;
+	width: 350px;
+	height: 150px;
+	margin: auto;
+	text-align: left;
+	font-size: 0.8em;
+	font-family: monospace;
+}
+
+div.container {
+	text-align: left;
+}
+
+div#center-inputs {
+	margin: auto;
+	width: 400px;
+}
+
+input, textarea {
+	color: black;
+	background: #603030;
+	border: 1px solid #a9a9a9;
+	text-align: left;
+	margin: 5px;
+}
+
+input {
+	width: 250px;
+}
+
+textarea {
+	width:400px;
+	height: 200px;
+}

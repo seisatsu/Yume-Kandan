@@ -28,6 +28,7 @@ TODO
 ====
 
 * Make players aware of each other!
+* Kick ass and choose names.
 * Add support for Tiled maps.
 * Add support for multiple areas and movement between areas.
 * Add support for multiple graphical and walkable layers.
@@ -38,19 +39,40 @@ TODO
 * Custom or at least multiple player sprites, with animations.
 * Interactive objects in the world.
 * Stack-based properly timed input handling.
+* prevent default (jquery)
 //-->
 
 <html>
 <head>
-    <script src="http://pariahsoft.com:1223/socket.io/socket.io.js"></script>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link type="text/css" rel="stylesheet" href="style.css" />
+    <script src="http://uboachan.net:1223/socket.io/socket.io.js"></script>
     <script src="jaws.js"></script>
+    <script src="jquery.js"></script>
     <script src="config.js"></script>
-    <meta charset="UTF-8">
     <title>Yume Kandan</title>
 </head>
 <body>
-    <canvas width=500 height=500 id="canvas"></canvas><br />
-    FPS: <span id="fps"></span>. Move with arrows. Use textbox to speak.
+    <div id="page">
+        <canvas width=384 height=384 id="canvas"></canvas><br />
+        FPS: <span id="fps">0</span>. Move with arrows. Use textbox to speak.<br />
+        <br />
+        <h1>Chat Box</h1>
+        <textarea readonly id="chat-log"></textarea>
+        <div id="center-inputs">
+            <div class="container">
+                <input type="text" id="chat" onkeydown="if (event.keyCode == 13) document.getElementById('sendchat').click()">
+                <button id="sendchat" onclick="submitChat();">Send</button>
+            </div>
+            <div class="container">
+                <input type="text" id="name" onkeydown="if (event.keyCode == 13) document.getElementById('setname').click()">
+                <button id="setname" onclick="submitName();">Set Name</button>
+            </div>
+        </div>
+        <br />
+        <h1>Jaws Log</h1>
+        <div id="jaws-log"></div>
+    </div>
 
     <script>
     /*** Initial Setup ***/
@@ -60,7 +82,28 @@ TODO
     var playerlist;
     var selfcid;
     var socket;
-    var fps = document.getElementById("fps");
+    var fps = document.getElementById('fps');
+
+
+    /*** Helper Functions ***/
+
+    // Submit chat line.
+    function submitChat() {
+        socket.emit('say', document.getElementById('chat').value);
+        document.getElementById('chat').value = '';
+    }
+
+    // Change player name.
+    function submitName() {
+        socket.emit('name', document.getElementById('name').value);
+        document.getElementById('name').value = '';
+    }
+
+    // Add text to chat box.
+    function addText(message) {
+        document.getElementById('chat-log').value += '\n' + message;
+        document.getElementById('chat-log').scrollTop = document.getElementById('chat-log').scrollHeight;
+    }
 
 
     /*** Game Logic ***/
@@ -68,53 +111,60 @@ TODO
     function PlayState() {
         // *** Setup function.
         this.setup = function() {
-            // Connect and join the server.
-            socket = io.connect(config["network"]["host"] + ":" + config["network"]["port"]);
-            socket.emit("join", "seisatsu");
+            // Attempt connection.
+            socket = io.connect(config['network']['host'] + ':' + config['network']['port']);
+            socket.emit('join', 'seisatsu');
 
             // Create player sprite. Only one available now.
-            playersprite = new jaws.Sprite({image: "smiley.png", x: 32, y:32, scale: 1});
+            playersprite = new jaws.Sprite({
+                image: 'smiley.png',
+                x: config['graphics']['tilewidth'],
+                y: config['graphics']['tileheight'],
+                scale: 1
+            });
 
             // Prevent default keys.
-            jaws.preventDefaultKeys(["up", "down", "left", "right", "space"]);
+            jaws.preventDefaultKeys(['up', 'down', 'left', 'right', 'space']);
+
+            // Listen for server-message event.
+            socket.on('server-message', function(msg) {
+                addText('*** ' + msg);
+            });
+
+            // Listen for update-players event.
+            socket.on('update-players', function(scid, pl) {
+                selfcid = scid;
+                playerlist = pl;
+            });
+
+            //Listen for chat event.
+            socket.on('chat', function(name, msg) {
+                addText('* ' + name + ': ' + msg);
+            });
+
+            // Listen for reposition event.
+            socket.on('reposition', function(name, x, y) {
+            });
         }
 
         // *** Mainloop first function.
         this.update = function() {
-            // Listen for server-message event.
-            socket.on("server-message", function(msg) {
-            });
-
-            // Listen for update-players event.
-            socket.on("update-players", function(scid, pl) {
-                selfcid = scid;
-                playerslist = pl;
-            });
-
-            // Listen for say event.
-            socket.on("say", function(cid, msg) {
-            });
-
-            // Listen for move event.
-            socket.on("move", function(cid, x, y) {
-            });
-
             // Listen for keypresses.
-            if(jaws.pressed("left a")) {
-                playersprite.x -= 16;
-                socket.emit("move", -1, 0);
+            if(jaws.pressed('left')) {
+                playersprite.x -= config['graphics']['tilewidth'];
+                socket.emit('move', -1, 0);
             }
-            if(jaws.pressed("right d")) {
-                playersprite.x += 16;
-                socket.emit("move", 1, 0);
+            if(jaws.pressed('right')) {
+                playersprite.x += config['graphics']['tilewidth'];
+                socket.emit('move', 1, 0);
             }
-            if(jaws.pressed("up w")) {
-                playersprite.y -= 16;
-                socket.emit("move", 0, -1);
+            if(jaws.pressed('up')) {
+                playersprite.y -= config['graphics']['tileheight'];
+                socket.emit('move', 0, -1);
             }
-            if(jaws.pressed("down s")) {
-                playersprite.y += 16;
-                socket.emit("move", 0, +1);
+            if(jaws.pressed('down')) {
+                playersprite.y += config['graphics']['tileheight'];
+                socket.emit('move', 0, +1);
             }
 
             // Update FPS.
@@ -133,8 +183,11 @@ TODO
 
     // Load the app on window load.
     window.onload = function() {
+        // Clear chat log textarea.
+        document.getElementById('chat-log').value = 'Yume Kandan v0';
+
         // Load resources.
-        jaws.assets.add("smiley.png")
+        jaws.assets.add('smiley.png');
 
         // Start.
         jaws.start(PlayState);
