@@ -28,7 +28,7 @@
 /*** Tiled Map Handler Class ***/
 
 /*
-* This class loads a JSON map produced by the Tiled map editor, and loads the
+* This class reads a JSON map produced by the Tiled map editor, and loads the
 * graphics for each layer into a jaws.TileMap.
 *
 * ==========
@@ -38,6 +38,8 @@
 * mapdata (arg): JSON contents of the Tiled map.
 * basedir (arg): Directory where tilesheets are kept.
 * tilesheet: Path to the tilesheet image.
+* width: Width of the map in tiles.
+* height: Height of the map in tiles.
 * tilewidth: Width of tiles in the sheet.
 * tileheight: Height of tiles in the sheet.
 * tileset: jaws.SpriteSheet containing graphics for each tile in the sheet.
@@ -52,75 +54,84 @@
 * load: Load the tilemap and populate layer data.
 */
 function TiledMap(mapdata, basedir) {
-	this.mapdata = mapdata;
-	this.basedir = basedir;
+    this.mapdata = mapdata;
+    this.basedir = basedir;
 
-	this.tilesheet = basedir + this.tileset['image'];
+    this.tilesheet = basedir + mapdata['tilesets'][0]['image'];
 
-	this.tilewidth = mapdata['tilesets'][0]['tilewidth'];
+    this.width = mapdata['width'];
+    this.height = mapdata['height'];
 
-	this.tileheight = mapdata['tilesets'][0]['tileheight'];
+    this.tilewidth = mapdata['tilesets'][0]['tilewidth'];
+    this.tileheight = mapdata['tilesets'][0]['tileheight'];
 
-	// Tileset made from each tile in the tilesheet.
-	jaws.assets.add(this.tilesheet);
-	this.tileset = new jaws.SpriteSheet({
-		image: this.tilesheet,
-		frame_size: [
-			this.tilewidth,
-			this.tileheight
-		]
-	});
+    // Tileset made from each tile in the tilesheet.
+    this.tileset = new jaws.SpriteSheet({
+        image: this.tilesheet,
+        orientation: 'right',
+        frame_size: [
+            this.tilewidth,
+            this.tileheight
+        ]
+    });
 
-	this.below_layers = [];
+    this.below_layers = [];
+    this.object_layer = mapdata['layers'][config['graphics']['layers_below']]['objects'];
+    this.above_layers = [];
 
-	this.object_layer = mapdata['layers'][config['graphics'][layers_below]]['objects'];
+    // Load the map into graphical layers.
+    this.load = function() {
+        var layer = 0;
 
-	this.above_layers = [];
+        // Assemble each layer as a jaws.TileMap.
+        while (layer < this.mapdata['layers'].length) {
+	        // Is this the object layer? If so, skip it.
+	        if (this.mapdata['layers'][layer]['type'] == 'objectgroup') {
+	            layer++;
+	        }
 
-	// Load the map into graphical layers.
-	function load() {
-		// Assemble each layer as a jaws.TileMap.
-		var l = 0;
-		for (var layer in mapdata['layers']) {
-			// Is this the object layer? If so, skip it.
-			if (l == config['graphics'][layers_below]) {
-				continue;
-			}
+	        var tiles = new jaws.SpriteList();
 
-			var tiles = new jaws.SpriteList();
+	        // Push tiles into sprite list.
+	        var i = 0;
+	        for(var h = 0; h < this.mapdata['height']; h++) {
+	            for(var w = 0; w < this.mapdata['width']; w++) {
+	                // Grab tile from tileset, position it, and push it onto the list. Skip zeroes.
+	                if (this.mapdata['layers'][layer]['data'][i] == 0) {
+	                	i++;
+	                	continue;
+	                }
+	                var tile = this.tileset.frames[this.mapdata['layers'][layer]['data'][i]-1];
+	                var tilesprite = new jaws.Sprite({image: tile, x: w*this.tilewidth, y: h*this.tileheight});
+	                tiles.push(tilesprite);
+	                i++;
+	            }
+	        }
 
-			// Push tiles into sprite list.
-			var i = 0;
-			for(var h = 0; h < this.mapdata['height']; h++) {
-        		for(var w = 0; w < this.mapdata['width']; w++) {
-        			// Grab tile from tileset and push it onto the list.
-            		tiles.push(this.tileset.frames[layer['data'][i]-1].moveTo(w*this.tilewidth, h*this.tileheight));
-					i++;
-          		}
-        	}
+	        // Create a jaws.TileMap from the collected sprite list.
+	        var tile_map = new jaws.TileMap({
+	            size: [
+	                this.mapdata['width'],
+	                this.mapdata['height']
+	            ],
+	            cell_size: [
+	                this.tilewidth,
+	                this.tileheight
+	            ]
+	        });
+	        tile_map.push(tiles);
 
-        	// Create a jaws.TileMap from the collected sprite list.
-        	var tile_map = new jaws.TileMap({
-        		size: [
-        			this.mapdata['width'],
-        			this.mapdata['height']
-        		],
-        		cell_size: [
-        			this.tilewidth,
-        			this.tileheight
-        		]
-        	});
-        	tile_map.push(tiles);
+	        // Store layers below player/object layer.
+	        if (layer < config['graphics']['layers_below']) {
+	            this.below_layers.push(tile_map);
+	        }
 
-        	// Store layers below player/object layer.
-        	if (l < config['graphics'][layers_below]) {
-        		this.below_layers += tile_map;
-        	}
+	        //Store layers above player/object layer.
+	        else  {
+	            this.above_layers.push(tile_map);
+	        }
 
-        	//Store layers above player/object layer.
-        	else  {
-        		this.above_layers += tile_map;
-        	}
-		}
-	}
+	        layer++;
+    	}
+    }
 }

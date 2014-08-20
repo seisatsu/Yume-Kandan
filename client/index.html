@@ -5,9 +5,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link type="text/css" rel="stylesheet" href="style.css" />
     <script src="http://uboachan.net:1223/socket.io/socket.io.js"></script>
-    <script src="jaws.js"></script>
     <script src="config.js"></script>
-    <script src="tiled-map.js"></script>
+    <script src="jaws/jaws.js"></script>
+    <script src="jaws/sprite_list.js"></script>
+    <script src="inc/tiled-map.js"></script>
     <title>Yume Kandan</title>
 </head>
 
@@ -81,7 +82,8 @@ TODO
     // Declare global variables.
     var playersprite;
     var playerlist;
-    var input_locked = false;
+    var tiledmap;
+    var viewport;
     var selfcid;
     var socket;
     var fps = document.getElementById('fps');
@@ -132,6 +134,16 @@ TODO
             // Prevent default keys.
             jaws.preventDefaultKeys(['up', 'down', 'left', 'right', 'space']);
 
+            // Load tilemap.
+            tiledmap = new TiledMap(jaws.assets.get('data/lobby.json'), 'data/');
+            tiledmap.load();
+
+            // Setup viewport.
+            viewport = new jaws.Viewport({
+                max_x: tiledmap.tilewidth * tiledmap.width,
+                max_y: tiledmap.tileheight * tiledmap.height
+            });
+
             // Listen for server-message event.
             socket.on('server-message', function(msg) {
                 addText('*** ' + msg);
@@ -179,8 +191,22 @@ TODO
 
         // *** Mainloop second function.
         this.draw = function() {
+            // Clear the canvas.
             jaws.clear();
-            playersprite.draw();
+
+            // Draw layers below player.
+            for (var layer = 0; layer < tiledmap.below_layers.length; layer++) {
+                var test =tiledmap.below_layers.length;
+                viewport.drawTileMap(tiledmap.below_layers[layer]);
+            }
+            
+            // Draw player sprite.
+            viewport.draw(playersprite);
+
+            // Draw layers above player.
+            for (var layer = 0; layer < tiledmap.above_layers.length; layer++) {
+                viewport.drawTileMap(tiledmap.above_layers[layer]);
+            }
         }
     }
 
@@ -194,6 +220,8 @@ TODO
 
         // Load resources.
         jaws.assets.add('smiley.png');
+        jaws.assets.add('data/lobby.json');
+        jaws.assets.add('data/forest.png');
 
         // Start.
         jaws.start(PlayState);
